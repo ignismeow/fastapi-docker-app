@@ -1,0 +1,30 @@
+name: Deploy FastAPI Docker App
+on:
+  push:
+    branches:
+      - main
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: your-dockerhub-username/fastapi-docker-app:latest
+      - name: Deploy to server via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            docker pull your-dockerhub-username/fastapi-docker-app:latest
+            docker stop fastapi-app || true
+            docker rm fastapi-app || true
+            docker run -d -p 80:80 --name fastapi-app your-dockerhub-username/fastapi-docker-app:latest
